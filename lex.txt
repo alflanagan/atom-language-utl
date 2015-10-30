@@ -1,0 +1,166 @@
+# info about lexer I created in another project
+
+# UTL code is embedded in an HTML document, usually
+states = (
+        # our initial state is always non-UTL, switch on '[%' and '%]'
+        ('utl', 'inclusive'),
+    )
+    reserved = {
+        'and': 'AND',
+        'as': 'AS',
+        'break': 'BREAK',
+        'call': 'CALL',
+        'continue': 'CONTINUE',
+        'default': 'DEFAULT',
+        'each': 'EACH',
+        'echo': 'ECHO',
+        'else': 'ELSE',
+        'elseif': 'ELSEIF',
+        'end': 'END',
+        'exit': 'EXIT',
+        'false': 'FALSE',
+        'for': 'FOR',
+        'foreach': 'FOR',
+        'if': 'IF',
+        'is': 'IS',
+        'include': 'INCLUDE',
+        'macro': 'MACRO',
+        'null': 'NULL',
+        'not': 'NOT',
+        'or': 'OR',
+        'return': 'RETURN',
+        'then': 'THEN',
+        'true': 'TRUE',
+        'while': 'WHILE',
+    }
+
+    # UTL doesn't support all of the PHP operators
+    # NOTE operators that start with other operators must come first i.e. '>=' before '>'
+    operators = [r'\.\.',
+                 r'\+=', '-=', r'\*=', '/=', '%=', r'\.', r'\*', '-', r'\+', '/', '%',
+                 '<=', '>=', '<', '>', '==', '!=',
+                 '!',
+                 '&&', r'\|\|', 'and', 'or', 'is', 'not',
+                 r'\|', ':', ',', '[', '(']
+
+    # non-regex form for quick comparison
+    operator_list = ['..', '+=', '-=', '*=', '/=', '%=', '.', '*', '-', '+', '/', '%', '<=',
+                     '>=', '<', '>', '==', '!=', '!', '&&', '||', 'and', 'or', 'is', 'not', '|',
+                     ':', ',', '[', '(']
+
+    tokens = ['START_UTL',
+              'END_UTL',
+              'ID',
+              'NUMBER',
+              'COMMENT',
+              'LPAREN',
+              'RPAREN',
+              'LBRACKET',
+              'RBRACKET',
+              # operators
+              'COLON',
+              'ASSIGN',
+              'COMMA',
+              'PLUS',
+              'MINUS',
+              'TIMES',
+              'DIV',
+              'MODULUS',
+              'ASSIGNOP',
+              'FILTER',
+              'EQ',
+              'NEQ',
+              'RANGE',
+              'LT',
+              'LTE',
+              'GT',
+              'GTE',
+              'DOT',
+              'DOUBLEAMP',  # &&
+              'DOUBLEBAR',  # ||
+              'EXCLAMATION',  # ! (not)
+              # other
+              'SEMI',
+              'STRING',
+              'DOCUMENT',
+              'EOF'] + list(set(reserved.values()))
+
+    # ======== Tokens that switch state ==========================
+    ANY_START_UTL: r'\[%-?'
+    ANY_END_UTL: r'-?%]'
+    # ======== INITIAL state =====================================
+    # everything up to START_UTL gets put in one token
+    # this gives us
+    # LexToken(DOCUMENT,'some text',..
+    # LexToken(DOCUMENT,'[',...
+    # LexToken(DOCUMENT,'more text',...
+    # which is not ideal, but workable
+    DOCUMENT: r'[^[]+'
+    LBRACKET: r'\['
+    # ======== UTL state =====================================
+    t_utl_LBRACKET = r'\['
+
+    # Define a rule so we can track line numbers (also see t_DOCUMENT())
+    def t_utl_newline(self, t):
+        r'\n+'
+        t.lexer.lineno += len(t.value)
+
+    # A string containing ignored characters (spaces and tabs)
+    t_ignore = ' \t'
+
+    t_utl_LPAREN = r'[(]'
+    t_utl_RPAREN = r'[)]'
+    t_utl_RBRACKET = r']'
+    t_utl_COLON = r':'   # bar = ['key1': 'value', 'key2': 'value']
+    t_utl_ASSIGN = r'='
+
+    t_utl_TIMES = r'\*'
+    t_utl_DIV = '/'
+    t_utl_MODULUS = '%'
+    t_utl_PLUS = r'\+'
+    t_utl_MINUS = '-'
+    t_utl_COMMA = ','  # may be operator, may be separator
+    t_utl_EXCLAMATION = '!'
+    t_utl_DOT = r'\.'
+    t_utl_DOUBLEAMP = r'&&'  # means same as "and" , but that is reserved word not op
+    t_utl_DOUBLEBAR = r'\|\|'  # means same as "or"
+    t_utl_EQ = '=='
+    t_utl_NEQ = '!='
+
+    t_utl_LT = '<'
+    t_utl_LTE = '<='
+    t_utl_GT = '>'
+    t_utl_GTE = '>='
+
+    t_utl_RANGE = r'\.\.'
+
+    # comment (ignore)
+    # PROBLEMS: comments *can* be nested
+    #          delimiters outside template ([% .. %]) should be ignored
+    # probably need another lexer state
+    def t_utl_COMMENT(self, t):
+        r'(/\*(.|\n)*?\*/)'
+        t.lexer.lineno += t.value.count('\n')
+
+    # note since a ASSIGNOP b ==> a = a OP b, and operators are all left-assoc, precedence
+    # doesn't matter
+    def t_utl_ASSIGNOP(self, t):
+        r'\+=|-=|\*=|/=|%='
+        return t
+
+    t_utl_SEMI = r';'
+    t_utl_FILTER = r'\|'
+
+    def t_utl_ID(self, t):
+        r'[a-zA-Z_][a-zA-Z_0-9]*'
+        # case-insensitive check for reserved words
+        t.type = self.reserved.get(t.value.lower(), 'ID')
+        return t
+
+    def t_utl_NUMBER(self, t):
+        r'\d+(\.\d+)?'
+        # t.value = float(t.value)
+        return t
+
+    STRING: r'"(?P<dq>(\\"|[^"])*)"|\'(?P<sq>(\\\'|[^\'])*)\''
+        # note RE above has to account for escaped quotes inside string
