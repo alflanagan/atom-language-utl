@@ -1,0 +1,23 @@
+{
+  "name": "language-utl",
+  "version": "0.1.0",
+  "description": "Townnews' UTL template language support in Atom",
+  "engines": {
+    "atom": "*",
+    "node": "*"
+  },
+  "homepage": "http://adrian-l-flanagan.herokuapp.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alflanagan/atom-language-utl.git"
+  },
+  "license": "GPL-3.0+",
+  "bugs": {
+    "url": "https://github.com/alflanagan/atom-language-utl/issues"
+  },
+  "devDependencies": {
+    "atom-syntax-tools": "^0.9.1",
+    "coffeelint": "^1.10.1"
+  },
+  "private": true
+}
