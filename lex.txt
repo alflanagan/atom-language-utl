@@ -98,69 +98,51 @@ states = (
     DOCUMENT: r'[^[]+'
     LBRACKET: r'\['
     # ======== UTL state =====================================
-    t_utl_LBRACKET = r'\['
-
-    # Define a rule so we can track line numbers (also see t_DOCUMENT())
-    def t_utl_newline(self, t):
-        r'\n+'
-        t.lexer.lineno += len(t.value)
+    LBRACKET = r'\['
 
     # A string containing ignored characters (spaces and tabs)
     t_ignore = ' \t'
 
-    t_utl_LPAREN = r'[(]'
-    t_utl_RPAREN = r'[)]'
-    t_utl_RBRACKET = r']'
-    t_utl_COLON = r':'   # bar = ['key1': 'value', 'key2': 'value']
-    t_utl_ASSIGN = r'='
+    LPAREN = r'[(]'
+    RPAREN = r'[)]'
+    RBRACKET = r']'
+    COLON = r':'   # bar = ['key1': 'value', 'key2': 'value']
+    ASSIGN = r'='
 
-    t_utl_TIMES = r'\*'
-    t_utl_DIV = '/'
-    t_utl_MODULUS = '%'
-    t_utl_PLUS = r'\+'
-    t_utl_MINUS = '-'
-    t_utl_COMMA = ','  # may be operator, may be separator
-    t_utl_EXCLAMATION = '!'
-    t_utl_DOT = r'\.'
-    t_utl_DOUBLEAMP = r'&&'  # means same as "and" , but that is reserved word not op
-    t_utl_DOUBLEBAR = r'\|\|'  # means same as "or"
-    t_utl_EQ = '=='
-    t_utl_NEQ = '!='
+    TIMES = r'\*'
+    DIV = '/'
+    MODULUS = '%'
+    PLUS = r'\+'
+    MINUS = '-'
+    COMMA = ','  # may be operator, may be separator
+    EXCLAMATION = '!'
+    DOT = r'\.'
+    DOUBLEAMP = r'&&'  # means same as "and" , but that is reserved word not op
+    DOUBLEBAR = r'\|\|'  # means same as "or"
+    EQ = '=='
+    NEQ = '!='
 
-    t_utl_LT = '<'
-    t_utl_LTE = '<='
-    t_utl_GT = '>'
-    t_utl_GTE = '>='
+    LT = '<'
+    LTE = '<='
+    GT = '>'
+    GTE = '>='
 
-    t_utl_RANGE = r'\.\.'
+    RANGE = r'\.\.'
 
     # comment (ignore)
     # PROBLEMS: comments *can* be nested
     #          delimiters outside template ([% .. %]) should be ignored
     # probably need another lexer state
-    def t_utl_COMMENT(self, t):
-        r'(/\*(.|\n)*?\*/)'
-        t.lexer.lineno += t.value.count('\n')
+    COMMENT = r'(/\*(.|\n)*?\*/)'
 
-    # note since a ASSIGNOP b ==> a = a OP b, and operators are all left-assoc, precedence
-    # doesn't matter
-    def t_utl_ASSIGNOP(self, t):
-        r'\+=|-=|\*=|/=|%='
-        return t
+    ASSIGNOP = r'\+=|-=|\*=|/=|%='
 
-    t_utl_SEMI = r';'
-    t_utl_FILTER = r'\|'
+    SEMI = r';'
+    FILTER = r'\|'
 
-    def t_utl_ID(self, t):
-        r'[a-zA-Z_][a-zA-Z_0-9]*'
-        # case-insensitive check for reserved words
-        t.type = self.reserved.get(t.value.lower(), 'ID')
-        return t
+    ID = r'[a-zA-Z_][a-zA-Z_0-9]*'
 
-    def t_utl_NUMBER(self, t):
-        r'\d+(\.\d+)?'
-        # t.value = float(t.value)
-        return t
+    NUMBER = r'\d+(\.\d+)?'
 
-    STRING: r'"(?P<dq>(\\"|[^"])*)"|\'(?P<sq>(\\\'|[^\'])*)\''
+    STRING = r'"(?P<dq>(\\"|[^"])*)"|\'(?P<sq>(\\\'|[^\'])*)\''
         # note RE above has to account for escaped quotes inside string
