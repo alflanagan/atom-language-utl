@@ -21,7 +21,7 @@ makeRegexFrom = (a_string) ->
 
 grammar =
   name: 'UTL'
-  scopeName: 'text.html.utl'
+  scopeName: 'text.utl'
   fileTypes: [ 'utl' ]
 
   patterns: [
