@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "atom-syntax-tools": "^0.9.1",
-    "coffeelint": "^1.10.1"
+    "coffeelint": "^1.16.0"
   },
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
