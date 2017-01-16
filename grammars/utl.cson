@@ -1,0 +1,35 @@
+'fileTypes': [
+  'utl'
+]
+'name': 'UTL'
+'scopeName': 'text.utl'
+'patterns': [
+  {
+    'include': '#utl'
+  }
+  {
+    'include': '#document'
+  }
+]
+'repository':
+  'reserved':
+    'patterns': [
+      {
+        'match': '(?i)\b(?:and|as|break|call|continue|default|each|echo|else|elseif|end|exit|false|for|foreach|if|is|include|macro|null|not|or|return|then|true|while)\b'
+        'name': 'reserved.utl'
+      }
+    ]
+  'operator':
+    'patterns': [
+      {
+        'name': 'operator.utl'
+        'match': '\\.\\.|\\+=|-=|\\*=|/=|%=|\\.|\\*|-|\\+|/|%|<=|>=|<|>|==|!=|!|&&|\\|\\||and|or|is|not|\\||:|,|\\[|\\('
+      }
+    ]
+  'comment':
+    'patterns': [
+      {
+        'name': 'comment.utl'
+        'match': '/*(?:.|\n)*?*/'
+      }
+    ]
