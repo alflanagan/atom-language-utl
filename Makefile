@@ -14,8 +14,8 @@ tags:
 	find . -name node_modules -prune -o -name '*.js' -exec ctags ${CTAGFLAGS} '{}' \;
 	find . -name node_modules -prune -o -name '*.coffee' -exec ctags ${CTAGFLAGS} '{}' \;
 
-grammars/utl.cson: src/generate_grammar.coffee
-	coffee src/generate_grammar.coffee > grammars/utl.cson
+grammars/utl.cson: lib/generate_grammar.coffee
+	coffee lib/generate_grammar.coffee > grammars/utl.cson
 
 grammars: grammars/utl.cson
 

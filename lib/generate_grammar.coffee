@@ -7,7 +7,7 @@ keywords =  ['and', 'as', 'break', 'call', 'continue', 'default', 'each',
 
 operators = ['..', '+=', '-=', '*=', '/=', '%=', '.', '*', '-', '+', '/', '%',
              '<=', '>=', '<', '>', '==', '!=', '!', '&&', '||', 'and', 'or',
-             'is', 'not', '|', ':', ', ', '[', '(' ]
+             'is', 'not', '|', ':', ',', '[', '(' ]
 
 escapeChar = (char) ->
   switch char
