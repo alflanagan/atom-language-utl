@@ -6,7 +6,7 @@ describe 'UTL grammar', ->
       atom.packages.activatePackage 'language-utl'
 
     runs ->
-      grammar = atom.grammars.grammarForScopeName 'text.html.utl'
+      grammar = atom.grammars.grammarForScopeName 'text.utl'
 
   it 'parses the grammar', ->
     expect(grammar).toBeTruthy()
