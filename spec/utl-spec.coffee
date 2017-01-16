@@ -10,4 +10,4 @@ describe 'UTL grammar', ->
 
   it 'parses the grammar', ->
     expect(grammar).toBeTruthy()
-    expect(grammar.scopeName).toBe 'text.html.utl'
+    expect(grammar.scopeName).toBe 'text.utl'
