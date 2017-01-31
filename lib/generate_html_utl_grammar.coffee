@@ -1,33 +1,33 @@
 {makeRegexFromWords, makeGrammar, rule} = require('atom-syntax-tools')
 
-keywords =  ['[%', '%]', '[%-', '-%]']
-
-
-escapeChar = (char) ->
-  switch char
-    when '+', '*', '.', '|', '[', '('
-      '\\' + char
-    else
-      char
-
-makeRegexFrom = (a_string) ->
-  (escapeChar(char) for char in a_string).join('')
-
 grammar =
   name: 'HTML (UTL)'
   scopeName: 'text.html'
   fileTypes: [ 'utl' ]
 
   patterns: [
-    '#html'
-    '#utl'
+    {
+      'comment': 'Since html is valid in UTL include the html patterns'
+      'include': 'text.html.basic'
+    }
+    {
+      'begin': '(\\[%-?)'
+      'captures':
+        '1':
+          'name': 'entity.other.utl.utlbracket'
+      'end': '(-?%\\])'
+      'name': 'meta.scope.utl.templatetag'
+      'patterns': [
+        {
+          'match': '\\b()\\b'
+          'name': 'keyword.control.utl.template'
+        }
+        {
+          'match': '\\b(and|or|not|in|by|as)\\b'
+          'name': 'keyword.operator.django.template'
+        }
+      ]
+    }
   ]
-
-  repository:
-    utl_doc:
-      b: /\[%-?/
-      c: 'utl_doc.begin'
-      e: /-?%]/
-      p: [ "#utl" ]
-      
+          
 makeGrammar grammar, "CSON"

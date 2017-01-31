@@ -14,14 +14,16 @@ tags:
 	find . -name node_modules -prune -o -name '*.js' -exec ctags ${CTAGFLAGS} '{}' \;
 	find . -name node_modules -prune -o -name '*.coffee' -exec ctags ${CTAGFLAGS} '{}' \;
 
-grammars/utl.cson: lib/generate_grammar.coffee
-	coffee lib/generate_grammar.coffee > grammars/utl.cson
+CSON_FILE=grammars/html\ (utl).cson
 
-grammars: grammars/utl.cson
+$(CSON_FILE): lib/generate_html_utl_grammar.coffee
+	coffee lib/generate_html_utl_grammar.coffee > "$@"
+
+grammars: $(CSON_FILE)
 
 clean:
 	rm -f tags
-	rm -f grammars/utl.cson
+	rm -f grammars/*.cson
 
 distclean: clean
 	rm -rf node_modules

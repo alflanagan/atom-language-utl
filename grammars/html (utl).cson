@@ -1,0 +1,29 @@
+'fileTypes': [
+  'utl'
+]
+'name': 'HTML (UTL)'
+'scopeName': 'text.html'
+'patterns': [
+  {
+    'comment': 'Since html is valid in UTL include the html patterns'
+    'include': 'text.html.basic'
+  }
+  {
+    'begin': '(\\[%-?)'
+    'beginCaptures':
+      '1':
+        'name': 'entity.other.utl.utlbracket.html'
+    'end': '(-?%\\])'
+    'name': 'meta.scope.utl.templatetag.html'
+    'patterns': [
+      {
+        'match': '\\b()\\b'
+        'name': 'keyword.control.utl.template.html'
+      }
+      {
+        'match': '\\b(and|or|not|in|by|as)\\b'
+        'name': 'keyword.operator.django.template.html'
+      }
+    ]
+  }
+]
