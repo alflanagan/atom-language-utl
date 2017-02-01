@@ -69,27 +69,29 @@ grammar =
   name: 'HTML (UTL)'
   scopeName: 'text.utl'
   fileTypes: [ 'utl' ]
+  macros:
+    identifier: /[a-zA-Z_][a-zA-Z_0-9]*/
   patterns: [
     {
       comment: 'Since html is valid in UTL include the html patterns'
       include: 'text.html.basic'
     }
     {
-      begin: '(\\[%-?)'
+      begin: /(\[%-?)/
       captures:
         1:
           name: 'entity.other.bracket'
-      end: '(-?%\\])'
+      end: /(-?%\])/
       name: 'meta.scope.code'
       patterns: [
         {
-          begin: '/\\*'
-          end: '\\*/'
+          begin: /\/\*/
+          end: /\*\//
           name: 'comment.block'
         }
         {
-          begin: '(\'|")'
-          end: '\\1'
+          begin: /('|")/
+          end: /\1/
           name: 'string.quoted'
         }
         {
@@ -107,11 +109,11 @@ grammar =
         {
           # identifier -- any match for identifier in context (macro name, parameter, etc.) should
           # come first.
-          match: '\\b[a-zA-Z_][a-zA-Z_0-9]*\\b'
+          match: '\\b{identifier}(?:\\.{identifier})\\*'
           name: 'variable.other'
         }
         {
-          match: '\d+(\.\d+)?'
+          match: /\b\d+(\.\d+)?\b/
           name: 'constant.numeric'
         }
       ]
