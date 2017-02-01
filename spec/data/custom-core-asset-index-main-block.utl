@@ -1,0 +1,701 @@
+[%-
+
+ninja=false;
+if cms.request.param("ninja") == "on"; ninja=true; call cms.component.load("ninja_debug_log"); end;
+
+/* only begin work if assets are available */
+block = this.block;
+custom = block.custom;
+if block.assets | length > 0;
+
+    call cms.component.load('core_base_library');
+    call cms.component.load('core_external_jquery');
+    call cms.component.load('core_external_jqueryui');
+    call cms.component.load('core_yepnope');
+    call cms.component.load('core_external_jquery_plugins');
+    call cms.component.load('core_internal_jquery_plugins');
+
+    core_base_library_load_styles;
+    core_external_jquery_plugins_common;
+    core_internal_jquery_plugins_common;
+
+    lazyLoad = core_base_library_getCustomProperty('lazy_load', 'boolean', true);
+    placeHolder = cms.page.cdn('components/core_external_jquery_plugins/resources/images/place_holder.png');
+
+        /* gather site variables */
+        blox_comments = custom.blox_comments;
+
+        /* set default variables */
+        show_byline = 'false';
+        byline_text = 'false';
+        child_icons = 'true';
+        show_details = 'false';
+        comment_count = 'true';
+        float_thumb_lead_p == 'false';
+        photo_credit = 'false';
+        photo_credit_text = 'Photo by: ';
+        photo_caption = 'false';
+        show_day = 'true';
+        show_more_link = 'true';
+        show_updated = 'true';
+        show_flags = 'true';
+        show_new_updated = 'true';
+        show_posted_time = 'false';
+        update_location = 'middle';
+        update_text = 'Updated';
+        rss_query = 'false';
+        video_preview = 'preview';
+        player_width = '290';
+        player_height = '194';
+        flags = false;
+        player_count = 0;
+        preview_size = 100;
+
+        /* allow custom override of defaults */
+        if custom.show_byline; byline = custom.show_byline; end;
+        if custom.byline_text; byline_text = custom.byline_text; end;
+        if custom.child_icons; child_icons = custom.child_icons; end;
+        if custom.custom_paragraphs; custom_paragraphs = custom.custom_paragraphs; end;
+        if custom.show_details; show_details = custom.show_details; end;
+        if custom.comment_count; comment_count = custom.comment_count; end;
+        if custom.float_thumb_lead_p; float_thumb_lead_p = custom.float_thumb_lead_p; end;
+        if custom.photo_credit; photo_credit = custom.photo_credit; end;
+        if custom.photo_credit_text; photo_credit_text = custom.photo_credit_text; end;
+        if custom.photo_caption; photo_caption = custom.photo_caption; end;
+        if custom.show_day; show_day = custom.show_day; end;
+        if custom.show_more_link; show_more_link = custom.show_more_link; end;
+        if custom.show_updated; show_updated = custom.show_updated; end;
+        if custom.show_flags; show_flags = custom.show_flags; end;
+        if custom.show_posted_time; show_posted_time = custom.show_posted_time; end;
+        if custom.show_new_updated; show_new_updated = custom.show_new_updated; end;
+        if custom.update_location; update_location = custom.update_location; end;
+        if custom.update_text; update_text = custom.update_text; end;
+        if custom.rss_link; rss_link = custom.rss_link; end;
+        if custom.rss_query; rss_query = custom.rss_query; end;
+        if custom.group_max; group_max = custom.group_max; end;
+        if custom.mode; mode = custom.mode; end;
+        if custom.video_preview; video_preview = custom.video_preview; end;
+        if custom.player_width; player_width = custom.player_width; end;
+        if custom.player_height; player_height = custom.player_height; end;
+        if custom.title_truncate; title_trunc = custom.title_truncate; end;
+        if custom.custom_truncate; trunc = custom.custom_truncate; end;
+        if custom.preview_width;
+            preview_size = custom.preview_width;
+        else if custom.preview_size;
+            preview_size = custom.preview_size;
+        end;
+        preview_array = [preview_size,100,300,150,250,200];
+%]
+
+<style>
+    #blox-main-index-[% this.block.id %].blox-main-index .bucket-photo { width: [% preview_size | defaultval(100) %]px; }
+    #blox-main-index-[% this.block.id %].blox-main-index .bucket-photo img{ width:100%;  }
+</style>
+
+[% if mode == 'compact'%]
+    <div class="compact">
+[% end %]
+
+[% /* initialize show_thumb status */
+    show_thumb = true;
+    if custom.custom_thumb_off == 'true';
+        show_thumb = false;
+    end;
+
+macro asset_url_switch;
+    if this.block.custom.link_override;
+        this.block.custom.link_override;
+    else;
+        asset.url;
+    end;
+end;
+macro time_updated;
+    if asset.lastupdated != null %]
+    <dd>
+    <em class="item-updated">
+        [%     update_text;
+            echo ': ';
+            asset.lastupdated('F d, Y - g:i a') %]
+    </em></dd>
+[% else %]
+    <dd>
+    <em class="item-updated">
+        [%     'Posted: ';
+            if show_posted_time == 'true';
+                asset.starttime('F d, Y - g:i a');
+            else;
+                asset.starttime('F d, Y');
+            end; %]
+    </em></dd>
+[%- end;
+end; /* time updated */
+macro photo_text;
+    if photo_credit == 'true' && credit %]
+        <div class="photo-byline">
+        [%    photo_credit_text;
+            echo credit | html %]
+        </div>
+    [%     end; /* photo_credit */
+        if photo_caption == 'true' && caption %]
+        <div class="photo-cutline">
+            [% echo caption | html %]
+        </div>
+    [%     end; /* photo caption */
+end; /* photo_text macro */
+
+     gridNum = custom.stories;
+    if gridNum == 2;
+        grid = 4;
+    else if gridNum == 3 or gridNum == 4;
+        grid = 2;
+    end;
+    if custom.collapsible == 'true';
+    if custom.collapse_link_text;
+        collapse_link_text = custom.collapse_link_text;
+    else;
+        collapse_link_text = 'more headlines &raquo;';
+    end; -%]
+    <div class="hidden-div-toggle">
+        <a href="javascript:void(jQuery('#blox-collapse-bucket-[%- this.block.id -%]').toggle(400))" class="more moz-border">
+          [% collapse_link_text %]
+         </a>
+     </div><div class="clear"></div>
+    <div id="blox-collapse-bucket-[%- this.block.id -%]" style="display:none;">
+[% end %]
+
+
+<div id="blox-main-index-[% this.block.id %]" class="blox-main-index">
+    [%    if this.block.title %]
+            <div class="blox-title">
+                [% core_base_library_rss_link('tBlock' : this.block);
+                core_base_library_title('tBlock' : this.block) %]
+            </div>
+            [% core_base_library_sublinks('tBlock' : this.block) %]
+    [%    end %]
+<div class="blox-bucket-list">
+    [%    asset_day = 0; /* initialize dating */ %]
+    [%    foreach block.assets as asset;
+        flags = asset.flags; -%]
+     [%    if show_day == 'true' && asset.starttime && asset.starttime('d') != asset_day;
+        asset_day = asset.starttime('d') %]
+         <div class="day-partition">[% asset.starttime('l m/d/Y') %]</div>
+    [% end %]
+            [% if group_max && asset | iterpos % group_max == 0 %]
+                <div class="clear"></div>
+            [% end %]
+
+            <dl class="grid_[% grid %] [% if (asset | iterfirst); echo 'alpha'; echo ' first-in-list'; else if (asset | iterlast); echo 'omega'; end; if (asset | itereven); echo' even-list-item'; else; echo' odd-list-item'; end; if this.block.custom.service_classes | strbool == true; echo core_base_library_serviceClasses(asset);end; %]">
+    [%        if show_updated == 'true' && update_location == 'top' && asset.lastupdated !="null";
+                time_updated;
+            end;
+
+
+
+                if ninja; ninja_debug_log("running photo size check"); end;
+                photo_check = false;
+                video_check = false;
+
+                if asset.preview([preview_size]);
+                    photo_check = true;
+                    photo = asset.preview([preview_size]);
+                else if asset.type == 'edition' || asset.type == 'collection';
+                    if asset.items('relationship':'child')[0].preview([preview_size]);
+                        photo_check = true;
+                        photo = asset.items('relationship':'child')[0].preview([preview_size]);
+                    end;
+                else;
+                    foreach filterAssetsByType(
+                        'assetGroup':asset.items,
+                        'types':['image','youtube','video','vmix','syndicaster'],
+                        'mode':'include'
+                        ) as relatedItem;
+                        if core_base_library_assetThumb('asset':relatedItem,'sizeArray':[preview_size]);
+                            photo_check = true;
+                            photo = core_base_library_assetThumb('asset':relatedItem,'sizeArray':[preview_size]);
+                            if relatedItem.type == "youtube" || relatedItem.type == "video" || relatedItem.type == "vmix" || relatedItem.type == "syndicaster";
+                                video_check = true;
+                                video_asset = relatedItem;
+                            end;
+                        end;
+
+                        if photo_check; break; end;
+                    end;
+                end;
+
+                if !photo_check;
+                    if ninja; ninja_debug_log("No image found for configured preview size"); end;
+                    photo_size = 0;
+                    photo = null;
+                    foreach preview_array as pSize;
+
+                        if pSize > photo_size;
+                            if asset.preview;
+                                if asset.preview([pSize]);
+                                    photo_size = pSize;
+                                    debug = "found image for size "+pSize;
+                                    photo = asset.preview([pSize]);
+                                end;
+
+                            else if asset.type == 'edition' || asset.type == 'collection';
+                                if asset.items('relationship':'child')[0].preview(pSize);
+                                    photo_size = pSize;
+                                    debug = "found image for size "+pSize;
+                                    photo = asset.items('relationship':'child')[0].preview(pSize);
+                                end;
+                            else;
+                                if asset.items('type':'image')[0].preview(pSize);
+                                    photo_size = pSize;
+                                    debug = "found image for size "+pSize;
+                                    photo = asset.items('type':'image')[0].preview(pSize);
+                                end;
+                            end;
+                        end;
+                    end;
+                    if ninja; ninja_debug_log(debug); end;
+                else;
+                    if ninja; ninja_debug_log("Found Image for size: "+preview_size); end;
+                end;
+
+                caption = asset.items('type':'image')[0].description;
+                credit = asset.items('type':'image')[0].byline;
+                presentation = asset.items('type':'image')[0].presentation;
+                if asset.description;
+                    caption = asset.description;
+                else;
+                    caption = asset.content;
+                end;
+
+            -%]
+
+
+                [% if(gridNum != 3) -%]
+
+                    [% /* if ((photo && !noPhoto) && show_thumb) && float_thumb_lead_p != 'true' */ -%]
+
+                        [%- large_preview = false;
+                        if (asset.type == 'youtube' || asset.type == 'video' || asset.type == 'vmix' || asset.type == 'syndicaster' || video_check) && video_preview == 'player';
+                        large_preview = true;
+
+                                if this.block.custom.player_width;
+                                    player_width = this.block.custom.player_width;
+                                else;
+                                    player_width = 280;
+                                end;
+                                if this.block.custom.player_height;
+                                    player_height = this.block.custom.player_height;
+                                else;
+                                    if this.block.custom.player_width;
+                                        player_height = (((player_width / 16) * 9)|roundup);
+                                    else;
+                                        player_height = 160;
+                                    end;
+                                end;
+
+                                if !cms.component.load('core_external_jquery'); echo '<!--Failed to load core_external_jQuery.-->'; end;
+                                if !cms.component.load("core_video_player"); echo "<!-- error loading Video Player Component -->"; end;
+
+                                if video_check;
+                                    core_video_player('assets':video_asset,'style':'hd','player_width':player_width,'player_height':player_height+32,'id':'main-index-'+player_count,'mode':'embedded');
+                                else;
+                                    core_video_player('assets':[asset],'style':'hd','player_width':player_width,'player_height':player_height+32,'id':'main-index-'+player_count,'mode':'embedded');
+                                end;
+                                player_count = player_count + 1;
+
+                        else if photo && show_thumb || asset.type == 'collection' && show_thumb;
+                        large_preview = true; -%]
+
+                        [% if presentation %]
+                        <style>
+                        .blox-bucket-list dt.bucket-photo img, .blox-slider-news dt.bucket-photo img {
+                            border: none;
+                            background: transparent;
+                            padding: 0;
+                        }
+                        </style>
+                        [% end %]
+                            <dt class="bucket-photo[% if preview_size; echo ' preview-width-'+preview_size; end %]">
+                                <a href="[% asset_url_switch %]"  [% if asset.new_window then echo 'target="_blank"' %] title="[% asset.title | html %]" style="display: block;">
+                                    [% if lazyLoad %]
+                                        <img class="blox-img-loader" alt="[% photo.caption | html %]" src="[% placeHolder %]" data-original="[% photo.url %]" />
+                                    [% else %]
+                                        <img alt="[% photo.caption | html %]" src="[% photo.url %]" />
+                                    [% end %]
+                                </a>
+                                [%     photo_text %]
+                            </dt>
+                        [% end %]
+                    [% /* end */ %]
+                    <dd class="bucket-headline">
+                        [% if title_trunc > 0; title_content = asset.title | truncate(title_trunc, "..."); else; title_content = asset.title; end; -%]
+                        <a href="[% asset_url_switch %]" title="[% asset.title | html %]" [% if asset.new_window then echo 'target="_blank"' %]>
+                            [% title_content | strip_tags %]
+                        </a>
+                        [% if child_icons == 'true'; core_base_library_child; end %]
+                     </dd>
+                    [% if byline == 'true' && asset.byline %]
+                    <dd>
+                        <p class="byline">
+                            [% if byline_text != 'false'; byline_text; echo ' '; end; asset.byline %]
+                        </p>
+                    </dd>
+                    [% end %]
+                    [%     if show_updated == 'true' && update_location != 'top' && update_location != 'bottom';
+                        time_updated;
+                        end %]
+
+            [% if custom.lead_off != 'true' %]
+            <dd>
+            [%    if ((photo and !noPhoto) && show_thumb) && float_thumb_lead_p == 'true' && !large_preview -%]
+
+            <div class="bucket-photo float-left[% if preview_size; echo ' preview-width-'+preview_size; end %]">
+                <a href="[% asset_url_switch %]" title="[% asset.title | html %]" [% if asset.new_window then echo 'target="_blank"' %]>
+                    [% if lazyLoad %]
+                        <img class="blox-img-loader" alt="[% photo.caption | html %]" src="[% placeHolder %]" data-original="[% photo.url %]" width="[% photo.width %]" />
+                    [% else %]
+                        <img alt="[% photo.caption | html %]" src="[% photo.url %]" width="[% photo.width %]" />
+                    [% end %]
+                </a>
+                [%     photo_text %]
+             </div>
+            [%    end %]
+
+
+            [% if show_flags == 'true' || show_new_updated == 'true' || this.block.custom.service_classes | strbool == true %]
+                <ul class="blox-flags">
+                [% if this.block.custom.service_classes | strbool == true;
+                    core_base_library_premiumFlag(asset);
+                end %]
+                [% if show_flags == 'true' %]
+                    <li>[% core_base_library_assetFlags(target : asset) %]</li>
+                [% end %]
+                [% if show_new_updated == 'true' %]
+                    <li>[% core_base_library_new_updated(target : asset) %]</li>
+                [% end %]
+                  </ul>
+            [% end %]
+
+            [% if asset.type == 'article' %]
+                [% if asset.prologue && !custom_paragraphs %]
+                      <p>[% asset.prologue %]</p>
+                [% else %]
+                      [% if custom_paragraphs %]
+                        [% if custom_paragraphs == 'all' %]
+                            [% asset.content %]
+                        [% else %]
+                           [% foreach asset.content as para %]
+                           <p>[% para | tidy %]</p>
+                                [% if (para | iterpos) >= custom_paragraphs - 1 %]
+                                       [% break %]
+                                [% end %]
+                            [% end %]
+                        [% end %]
+                      [% else if custom.custom_truncate %]
+                        [% foreach asset.content as para %]
+                            [% if (para | length) > custom.custom_truncate %]
+                                <p>[% para | strip_tags | truncate(custom.custom_truncate, '...') %]</p>
+                            [% else %]
+                                <p>[% para | strip_tags | html %]</p>
+                            [% end %]
+                                [% if (para | iterpos) == 0 %]
+                                      [% break %]
+                                        [% end %]
+                        [% end %]
+                    [% else %]
+                        [% if custom.build_links == 'true' %]
+                            <p>[% asset.content[0] | autolink %]</p>
+                                    [% else %]
+                            <p>[% asset.content[0] %]</p>
+                                    [% end %]
+                    [% end %]
+                [% end %]
+            [% else %]
+                [% if flags && (show_flags == 'true' || show_new_updated == 'true') %]
+                            <ul class="blox-flags">
+                            [%     if show_flags == 'true' && flags %]
+                                    <li>[% core_base_library_assetFlags %]</li>
+                            [%     end;
+                                if show_new_updated == 'true';
+                                       core_base_library_new_updated(asset);
+                                end %]
+                            </ul>
+                           [% end %]
+                [% if asset.description;
+                    if asset.description | length > trunc %]
+                        <p>[% asset.description | strip_tags | truncate(trunc,'&hellip;') %]</p>
+                    [% else %]
+                        <p>[% asset.description | strip_tags %]</p>
+                    [% end %]
+                [% else if asset.content;
+                        if asset.content[0] | length > trunc %]
+                        <p>[% asset.content[0] | strip_tags | truncate(trunc,'&hellip;') %]</p>
+                    [%    else %]
+                        <p>[% echo asset.content[0] | strip_tags %]</p>
+
+        [%                end;
+                       end;
+                end %]
+                <div class="clear"></div>
+            </dd>
+            [% else %]
+            <dd>
+                [%    if ((photo and !noPhoto) && show_thumb) && float_thumb_lead_p == 'true' -%]
+                <div class="bucket-photo float-left[% if preview_size; echo ' preview-width-'+preview_size; end %]">
+                    <a href="[% asset_url_switch %]" title="[% asset.title | html %]" [% if asset.new_window then echo 'target="_blank"' %]>
+                        [% if lazyLoad %]
+                            <img class="blox-img-loader" alt="[% photo.caption | html %]" src="[% placeHolder %]" data-original="[% photo.url %]" width="[% photo.width %]" />
+                        [% else %]
+                            <img alt="[% photo.caption | html %]" src="[% photo.url %]" width="[% photo.width %]" />
+                        [% end %]
+                    </a>
+                    [%     photo_text %]
+                 </div>
+                [%    end %]
+                <div class="clear"></div>
+            </dd>
+            [% end %]
+                    [%     if show_updated == 'true' && update_location == 'bottom' && asset.lastupdated !="null";
+                        time_updated;
+                        end %]
+                        [% /* comment count if details is false */
+                        if comment_count == 'true' && show_details != 'true' && this.site.custom.blox_comments != 'none';
+                                core_base_library_comment_count('target': asset);
+                        end; %]
+                    [% if show_details == 'true' %]
+                        <p class="story-more">
+                        [% if asset.tags ('section') %]
+                          [%- if custom.custom_post_label;
+                            custom.custom_post_label;
+                          else -%]Posted in
+                          [%- end %]
+
+                        [% /* A custom property for posted on label  */ %]
+                        [% foreach asset.tags('section') as path, tag %]
+                        [% if tag | iterlast %]
+                          <a class="tn-tag-link" href="/[% path %]">[% tag | titlecase | replace('_',' ')  %]</a>
+                            [% else %]
+                          <a class="tn-tag-link" href="/[% path %]">[% tag | titlecase | replace('_',' ')  %]</a>,
+                            [% end %]
+                        [% end %]
+                        on
+                         [% end %]
+                         <em>[% asset.starttime('l, F j, Y g:i a') %].
+                        [% if asset.lastupdated %]
+                          <span style="color: #CC3300;">Updated: [% asset.lastupdated('g:i a') %].</span>
+                        [% end %]
+                          </em>
+                        [%    if asset.tags('type':'keyword') %]
+                            [%    foreach asset.tags('keyword') as keyword;
+                                    if keyword | startswith('#') != 'true';
+                                        if keyword | iterfirst; %]
+                                         | Tags:
+                                    [%    end %]
+                                        <a class="tn-tag-link" href="/topic/?q=[% keyword %]&amp;t=&amp;l=25&amp;d=&amp;d1=&amp;d2=&amp;f=html&amp;s=&amp;sd=desc&amp;s=start_time">
+                                            [% keyword | titlecase %]
+                                        </a>
+                                    [%    if keyword | iterlast;
+                                            echo '';
+                                        else;
+                                            echo ',';
+                                        end; %]
+                                [%    end;
+                                end;
+                            end %]
+                        [% /* comment count */
+                        if comment_count == 'true' && this.site.custom.blox_comments != 'none';
+                                core_base_library_comment_count('target': asset);
+                        end; %]
+              </p>
+                    [% end;
+
+                    /* more link */
+                        if show_more_link == 'true' %]
+                        <dd>
+                            <a href="[% asset_url_switch %]" title="[% asset.title | html %]">
+                            [%     if custom.more_link_text;
+                                    custom.more_link_text;
+                                else;
+                                    echo 'more &raquo;';
+                                end;
+                            %]
+                            </a>
+                        </dd>
+                    [% end %]
+
+                    [% else -%]
+                        [% if photo && show_thumb %]
+                            [% if lazyLoad %]
+                                <dd class="preview-thumb[% if preview_size; echo ' preview-width-'+preview_size; end %]"><a href="[% asset_url_switch %]" title="[% asset.title | html %]" [% if asset.new_window then echo 'target="_blank"' %]><img class="blox-img-loader" alt="[% photo.caption | html %]" scr="[% placeHolder %]" data-original="[% photo.url %]"  class="bucket-photo" /></a></dd>
+                            [% else %]
+                                <dd class="preview-thumb[% if preview_size; echo ' preview-width-'+preview_size; end %]"><a href="[% asset_url_switch %]" title="[% asset.title | html %]" [% if asset.new_window then echo 'target="_blank"' %]><img alt="[% photo.caption | html %]" scr="[% photo.url %]"  class="bucket-photo" /></a></dd>
+                            [% end %]
+                        [% end %]
+      </dl>
+                        <dl class="grid_[% grid %]">
+                            <dd class="bucket-headline">
+                                [% if title_trunc > 0; title_content = asset.title | truncate(title_trunc, "..."); else; title_content = asset.title; end; -%]
+                                <a href="[% asset_url_switch %]" title="[% asset.title | html %]" [% if asset.new_window then echo 'target="_blank"' %]>
+                                    [% title_content | strip_tags %]
+                                </a>
+                                    [% core_base_library_child %]
+                            </dd>
+        [% if flags && (show_flags == 'true' || show_new_updated == 'true') %]
+            <ul class="blox-flags">
+            [% if show_flags == 'true' %]
+                <li>[% core_base_library_assetFlags(asset) %]</li>
+            [% end %]
+            [% if show_new_updated == 'true' %]
+                <li>[% core_base_library_new_updated(asset) %]</li>
+            [% end %]
+            </ul>
+        [% end %]
+                    [% if custom.lead_off != 'true' %]
+                        [% if !asset.description %]
+                            <dd class="description2"><p>[% leadP | strip_tags %]</p></dd>
+                        [% else %]
+                            <dd class="description3"><p>[% asset.description %]</p></dd>
+                        [% end %]
+                    [% end %]
+
+
+                    [% gridNum = 4; noPhoto = true; -%]
+                [% end %]
+                <dd><span class="clear"></span></dd>
+            </dl>
+    [% end %]
+
+
+    <div class="clear"></div>
+    [% core_base_library_more_stories(this.block) %]
+</div>
+</div> [% /* end main index */
+    if custom.collapsible == 'true' %]
+</div>
+[% end;
+end %]
+
+[% if mode == 'compact'%]
+    </div>
+[%- end;
+core_base_library_blockWidgetCommonScripts;
+
+/* DOCUMENTATION
+ Custom Property Options:
+        ------------------------------------------------
+        'show_byline'
+        If set to true the byline will display. Default
+        is 'false'
+        ------------------------------------------------
+        'byline_text'
+        Setting this value will alter the text that
+        precedes the byline. Setting it to 'false' will
+        turn off the byline_text. Default is 'By'
+        ------------------------------------------------
+        'custom_thumb_off'
+        Setting this value to 'true' in the block admin
+        will turn off the thumbnail images.
+        ------------------------------------------------
+        'custom_paragraphs'
+        Setting this numeric property will set the
+        number of paragraphs that will be displayed
+        per asset.
+        If the value is set to 'all' the full asset will
+        be displayed.
+        ------------------------------------------------
+        'collapsible' and 'collapse_link_text'
+        If set to 'true', 'collapsible' will wrap the
+        bucket in a collapsing div and display a link to
+        toggle show/hide of that div.
+        'collapse_link'    will set the text of that link
+        (default text is 'more >>').
+        --------------------- ---------------------------
+        'show details'
+        When set to 'true'
+        a sentence describing the section along with
+        the posted time and comment count will display
+        with the story.
+        ex. "Posted in World on Tuesday, February 23,
+        2010 2:23 pm. Comments(23)"
+        ------------------------------------------------
+        'comment_count'
+        Setting this value to 'true' will toggle the
+        comment count on. The comment count links to
+        the asset's commenting area.
+        ------------------------------------------------
+        'float_thumb_lead_p'
+        Setting this to true will change the location of
+        the photo thumb to float to the left of the
+        respective element.
+        ------------------------------------------------
+        'lead_off'
+        If set to 'true' the lead paragraph will NOT be
+        displayed in the list.
+        ------------------------------------------------
+        'show_updated' and 'update_text'
+        If 'show_updated' is set to 'true' the time of
+        each story's last update will be displayed. If
+        no update info exists the publish date will
+        display.
+        If 'update_text' is entered the text will be
+        displayed before the date. (if 'Last Updated' is
+        entered, the output will be:
+        'Last Updated: 02/23/2023')
+        ------------------------------------------------
+        'photo_caption'
+        Set value to 'true' to toggle the caption to
+        display below the image.
+        Default is 'false'
+        ------------------------------------------------
+        'photo_credit'
+        Set value to true to toggle the photo credit to
+        display below the image.
+        Default is 'false'
+        ------------------------------------------------
+        'photo_credit_text'
+        Sets the photo credit text to the provided value.
+        Default is 'Photo by: '
+        NOTE: dependent upon property 'photo_credit'
+        value of 'true'
+        ------------------------------------------------
+        'update_location'
+        Setting this value to 'top' 'middle' or 'bottom'
+        will change the location of the 'show_updated'
+        information.
+        Default is 'middle'
+        ------------------------------------------------
+        'show_more_link' and 'more_link_text'
+        If 'show_more_link' is set to 'true', a link to
+        the article will be displayed below the lead
+        paragraph.
+        If 'more_link_text' is set the more link will
+        use the entered text as the link text. The
+        default is 'more &raquo;'
+        ------------------------------------------------
+        'custom_more_stories'
+        If 'custom_more_stories' is set to 'true,' a
+        link will show up at the bottom of the block
+        displaying the word 'More' plus the title of the
+        block (i.e. More Local News). This will link to
+        the same URL as is set for the title (by default
+        the name of the block or what is set in custom_url).
+        Note that if custom_url is set to 'none,' this
+        option will not work, even if enabled.
+        ------------------------------------------------
+        'custom_url'
+        This sets a custom URL for both the title link
+        and the 'more stories' link.
+        ------------------------------------------------
+        'show_day'
+        This will display a division by date.  A date div
+        is added each time a new date is found as the
+        block cycles through assets.
+        ------------------------------------------------
+        'show_posted_time'
+        Setting this value to 'true' will toggle the
+        timestamp (g:i a) on or off. The default is
+        'false'
+        ------------------------------------------------
+        'video_preview'
+        If set to 'player' then a player will show on
+        YouTube and video assets instead of just an image.
+*/
+-%]
