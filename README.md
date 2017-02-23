@@ -9,3 +9,7 @@ Note that this project is in a **very** early stage and I don't really know what
 
 Contributions are greatly appreciated. Please fork this repository and open a pull request to add
 snippets, make grammar tweaks, etc.
+
+## Known Issues
+
+The highlighting does not work between &lt;style&gt; tags, as the parser switches context to CSS. Possibly a problem in other contexts.
