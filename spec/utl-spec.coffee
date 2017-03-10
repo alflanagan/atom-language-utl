@@ -17,9 +17,9 @@ describe 'UTL grammar', ->
     expect(grammar.name).toBe 'HTML (UTL)'
 
   it 'parses a file', ->
-    fs.readFile 'spec/data/keywords.utl', {encoding: 'utf-8'}, (err, data) =>
+    fs.readFile 'spec/data/keywords.utl', {encoding: 'utf-8'}, (err, data) ->
       if err
-         throw err
+        throw err
       # we did decode file, right?
       expect(typeof data).toBe 'string'
       lines = grammar.tokenizeLines(data)
