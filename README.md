@@ -6,7 +6,7 @@ Build Status:&nbsp;&nbsp; ![Image](https://travis-ci.org/alflanagan/atom-languag
 
 Adds syntax highlighting and (eventually) snippets to UTL files in Atom.
 
-Bits and pieces may be stolen from the [PHP language support](https://github.com/atom/language-php.git) for Atom.
+Bits and pieces may be stolen from the [PHP language support](https://github.com/atom/language-php.git) for Atom. Also see [atom-django-templates](https://github.com/benjohnson/atom-django-templates).
 
 At this point the UTL syntax highlighting seems to be pretty functional. No snippets yet, and see [Issues](https://github.com/alflanagan/atom-language-utl/issues).
 
